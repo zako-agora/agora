@@ -126,8 +126,8 @@ app.post('/api/ask', async (req, res) => {
 
 /* ---------- Débat entre IA et synthèse ---------- */
 const DEBATE_SYSTEM = {
-  fr: 'Tu participes à un débat sur un forum avec d’autres IA. Réponds en français, en 1 à 2 phrases maximum, sans titre ni liste.',
-  en: 'You are taking part in a forum debate with other AIs. Reply in English, in 1 to 2 sentences maximum, with no title and no list.',
+  fr: (me) => `Tu es ${me}, une IA qui participe à un débat sur un forum avec d’autres IA. Parle toujours à la première personne (« je ») et ne parle jamais de toi à la troisième personne. Adresse-toi aux autres IA par leur nom. Défends ta position : si tu n’es pas d’accord, dis précisément sur quel point et pourquoi ; n’approuve que si l’argument te convainc vraiment. Réponds en français, en 2 à 3 phrases maximum, sans titre ni liste.`,
+  en: (me) => `You are ${me}, an AI taking part in a forum debate with other AIs. Always speak in the first person ("I") and never refer to yourself in the third person. Address the other AIs by name. Defend your position: if you disagree, say precisely on what point and why; only agree if the argument truly convinces you. Reply in English, in 2 to 3 sentences maximum, with no title and no list.`,
 };
 const SUMMARY_SYSTEM = {
   fr: 'Tu rédiges une synthèse neutre et courte, en français, sans titre ni liste.',
@@ -148,18 +148,22 @@ app.post('/api/debate', async (req, res) => {
   const answers = readAnswers(req.body);
   if (question.length < 3 || answers.length < 2) return res.status(400).json({ error: 'bad_request' });
 
-  const board = answers.map((a) => `${a.name} : ${a.text}`).join('\n\n');
-  const prompt = lang === 'fr'
-    ? `Question du forum : « ${question} »\n\nVoici les réponses des IA :\n\n${board}\n\nRéagis en 1 à 2 phrases aux réponses des autres IA, en les citant par leur nom, sans te répéter.`
-    : `Forum question: "${question}"\n\nHere are the AIs' answers:\n\n${board}\n\nReact in 1 to 2 sentences to the other AIs' answers, mentioning them by name, without repeating yourself.`;
-
   const store = loadStore();
   const results = await Promise.all(PROVIDERS.map(async (p) => {
     const base = { id: p.id, name: p.name };
     const cfg = config(p, store);
-    if (!cfg.key || !cfg.model || !answers.some((a) => a.id === p.id)) return { ...base, error: 'skipped' };
+    const mine = answers.find((a) => a.id === p.id);
+    const others = answers.filter((a) => a.id !== p.id);
+    if (!cfg.key || !cfg.model || !mine || others.length === 0) return { ...base, error: 'skipped' };
+
+    // Chaque IA reçoit sa propre réponse (étiquetée) et celles des AUTRES seulement
+    const board = others.map((a) => `${a.name} : ${a.text}`).join('\n\n');
+    const prompt = lang === 'fr'
+      ? `Question du forum : « ${question} »\n\nTa réponse précédente :\n${mine.text}\n\nRéponses des autres IA :\n\n${board}\n\nRéagis à leurs réponses.`
+      : `Forum question: "${question}"\n\nYour previous answer:\n${mine.text}\n\nThe other AIs' answers:\n\n${board}\n\nReact to their answers.`;
+
     try {
-      const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), DEBATE_SYSTEM[lang]);
+      const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), DEBATE_SYSTEM[lang](p.name));
       if (!text) throw new Error('empty answer');
       return { ...base, text: text.trim() };
     } catch (e) {
