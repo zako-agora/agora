@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agora</title>
+<style>
+:root{--bg:#f7f6fb;--card:#ffffff;--ink:#16142a;--mut:#6b6885;--line:#e6e3f2;--p1:#7c3aed;--p2:#ec4899;--soft:#f1edfd;--shadow:0 8px 30px rgba(80,60,160,.10)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0a16;--card:#14122a;--ink:#f3f1ff;--mut:#9d98c4;--line:#27244a;--p1:#8b5cf6;--p2:#f472b6;--soft:#1c1940;--shadow:0 8px 30px rgba(0,0,0,.4);color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);min-height:100vh;overflow-x:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body::before{content:"";position:fixed;inset:-20% -10% auto -10%;height:70vh;z-index:0;pointer-events:none;background:radial-gradient(40% 50% at 25% 30%,color-mix(in srgb,var(--p1) 35%,transparent),transparent),radial-gradient(35% 45% at 75% 20%,color-mix(in srgb,var(--p2) 28%,transparent),transparent);filter:blur(30px);animation:sway 14s ease-in-out infinite alternate}
+@keyframes sway{to{transform:translateX(40px) scale(1.08)}}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:24px 16px 56px}
+header{display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:800;font-size:20px;letter-spacing:-.3px}
+.brand b{background:linear-gradient(90deg,var(--p1),var(--p2));-webkit-background-clip:text;background-clip:text;color:transparent}
+select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+.hero{text-align:center;padding:22px 0 14px}
+.stack{display:flex;justify-content:center;margin-bottom:18px}
+.stack .av{width:52px;height:52px;margin-left:-10px;border:3px solid var(--bg);font-size:16px;animation:bob 3.2s ease-in-out infinite;animation-delay:calc(var(--k)*.35s)}
+.stack .av:first-child{margin-left:0}
+@keyframes bob{50%{transform:translateY(-7px)}}
+h1{font-size:clamp(28px,7vw,42px);line-height:1.1;margin:0 0 10px;letter-spacing:-1px;font-weight:800}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--p1),var(--p2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--mut);margin:0 auto;max-width:460px}
+.av{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;background:var(--c);flex:none}
+.ask{display:flex;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;box-shadow:var(--shadow);margin-top:20px;transition:.2s}
+.ask:focus-within{border-color:var(--p1);box-shadow:0 0 0 4px color-mix(in srgb,var(--p1) 18%,transparent),var(--shadow)}
+.ask input{flex:1;min-width:0;font:inherit;color:var(--ink);background:transparent;border:0;padding:10px 12px}
+.ask input:focus{outline:none}
+.go{font:inherit;font-weight:700;color:#fff;border:0;border-radius:12px;padding:0 20px;cursor:pointer;background:linear-gradient(90deg,var(--p1),var(--p2));transition:transform .15s}
+.go:hover{transform:scale(1.04)}
+.go:disabled{opacity:.55;cursor:default;transform:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.chip{font:inherit;font-size:13px;color:var(--mut);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer;transition:.2s}
+.chip:hover{color:var(--ink);border-color:var(--p1);transform:translateY(-2px)}
+.msg{text-align:center;color:var(--mut);font-size:14px;min-height:1.6em;margin:14px 0 4px}
+.msg a{color:var(--p1);font-weight:600}
+.tabs{display:flex;gap:6px;background:var(--soft);padding:4px;border-radius:14px;margin:8px 0 14px}
+.tabs button{flex:1;font:inherit;font-size:14px;font-weight:600;color:var(--mut);background:transparent;border:0;border-radius:10px;padding:8px;cursor:pointer;transition:.2s}
+.tabs .on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.sum{border-radius:18px;padding:16px;margin-bottom:14px;color:#fff;background:linear-gradient(135deg,var(--p1),var(--p2));box-shadow:var(--shadow);animation:rise .6s both}
+.sum small{opacity:.85;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.sum p{margin:4px 0 0;font-weight:500}
+.rep{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow);animation:rise .55s both;transition:transform .2s,border-color .2s}
+.rep:hover{transform:translateY(-3px);border-color:var(--c)}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+.rep .av{width:44px;height:44px;box-shadow:0 4px 14px color-mix(in srgb,var(--c) 55%,transparent)}
+.rb{min-width:0;flex:1}
+.top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nm{font-weight:700}
+.pv{font-size:12px;color:var(--mut)}
+.crown{font-size:11px;font-weight:700;color:#fff;background:var(--c);border-radius:99px;padding:1px 9px;display:none}
+.crown.on{display:inline-block;animation:rise .4s both}
+.tx{margin:6px 0 10px;min-height:2.4em;white-space:pre-wrap;overflow-wrap:anywhere}
+.tx.err{color:var(--mut);font-style:italic}
+.tx.t::after{content:"";display:inline-block;width:7px;height:1em;margin-left:2px;vertical-align:-2px;background:var(--c);border-radius:2px;animation:blink .8s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.vt{font:inherit;font-size:13px;color:var(--mut);background:var(--soft);border:1px solid transparent;border-radius:99px;padding:3px 12px;cursor:pointer;transition:.2s}
+.vt:hover{border-color:var(--c)}
+.vt.on{color:#fff;background:var(--c)}
+.rx{color:var(--mut)}
+.rk{display:grid;grid-template-columns:84px 1fr 30px;gap:12px;align-items:center;margin:14px 0;font-size:14px}
+.bar{height:12px;background:var(--soft);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--c);transition:width .6s}
+.note{text-align:center;color:var(--mut);font-size:12px;margin:18px 0 0}
+.hid{display:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Agora<b>.</b></div>
+    <select id="lang" aria-label="Language"><option value="fr">Français</option><option value="en">English</option></select>
+  </header>
+
+  <section class="hero">
+    <div class="stack" id="stack"></div>
+    <h1 id="h1"></h1>
+    <p class="lead" id="lead"></p>
+    <div class="ask"><input id="q" maxlength="500" autocomplete="off"><button class="go" id="go"></button></div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <div class="msg" id="msg" role="status"></div>
+  <div class="tabs" id="tabs"><button class="on" data-t="r"></button><button data-t="d"></button><button data-t="k"></button></div>
+  <div id="pr"></div><div id="pd" class="hid"></div><div id="pk" class="hid"></div>
+  <p class="note" id="foot"></p>
+</div>
+
+<script>
+const AI={cl:{n:'Claude',c:'#ea580c',i:'C'},gp:{n:'ChatGPT',c:'#059669',i:'G'},ge:{n:'Gemini',c:'#2563eb',i:'Ge'},mi:{n:'Mistral',c:'#d97706',i:'M'},gr:{n:'Grok',c:'#9333ea',i:'X'}};
+const ORDER=['cl','gp','ge','mi','gr'];
+const T={
+  fr:{t1:'Une question.',t2:'Cinq IA',t3:'te répondent.',lead:'Compare les points de vue de plusieurs intelligences artificielles en une seule fois, et vote pour la meilleure réponse.',
+    ph:'Pose ta question…',go:'Demander',ex:['Comment arrêter de procrastiner ?','Faut-il apprendre à coder ?','Comment négocier mon salaire ?'],
+    tabs:['Réponses','Débat','Classement'],sum:'✨ Synthèse des 5 IA',think:'Les IA réfléchissent…',empty:'Pose une question pour voir les réponses des 5 IA.',
+    ai:'IA',crown:'👑 Plébiscitée',nc:'Non configurée',un:'Indisponible pour le moment',rate:'Trop de questions, réessaie dans une minute.',bad:'La question doit faire entre 3 et 500 caractères.',net:'Connexion impossible au serveur.',
+    allnc:'Aucune IA n’est configurée. Ajoute tes clés dans la page d’administration.',adm:'Ouvrir l’administration',deb:'Les IA réagissent entre elles…',rknote:'Tes votes sur cet appareil',
+    foot:'Les réponses sont générées par des intelligences artificielles et peuvent contenir des erreurs.',react:'réagit aux autres'},
+  en:{t1:'One question.',t2:'Five AIs',t3:'answer you.',lead:'Compare the views of several artificial intelligences at once, and vote for the best answer.',
+    ph:'Ask your question…',go:'Ask',ex:['How do I stop procrastinating?','Should I learn to code?','How do I negotiate my salary?'],
+    tabs:['Answers','Debate','Ranking'],sum:'✨ Summary of the 5 AIs',think:'The AIs are thinking…',empty:'Ask a question to see the 5 AIs’ answers.',
+    ai:'AI',crown:'👑 Top pick',nc:'Not configured',un:'Unavailable right now',rate:'Too many questions, try again in a minute.',bad:'The question must be between 3 and 500 characters.',net:'Cannot reach the server.',
+    allnc:'No AI is configured. Add your keys in the admin page.',adm:'Open administration',deb:'The AIs are reacting to each other…',rknote:'Your votes on this device',
+    foot:'Answers are generated by artificial intelligence and may contain mistakes.',react:'reacts to the others'}
+};
+const $=s=>document.querySelector(s);
+const h=(tag,props={},...kids)=>{const e=document.createElement(tag);Object.assign(e,props);e.append(...kids);return e};
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+let lang='fr';try{lang=localStorage.getItem('lang')||((navigator.language||'fr').startsWith('en')?'en':'fr')}catch(e){}
+const t=k=>T[lang][k];
+let cur=null,gen=0,busy=false,V={};
+try{V=JSON.parse(localStorage.getItem('agora-votes')||'{}')||{}}catch(e){}
+const saveV=()=>{try{localStorage.setItem('agora-votes',JSON.stringify(V))}catch(e){}};
+const av=(id,extra='')=>{const a=AI[id]||{c:'#666',i:'?'};const e=h('div',{className:'av',textContent:a.i});e.style.cssText='--c:'+a.c+';'+extra;return e};
+const color=id=>(AI[id]||{}).c||'#666';
+
+function typeInto(el,text,delay,g){
+  el.textContent='';
+  if(RM){el.textContent=text;return}
+  setTimeout(()=>{
+    if(g!==gen)return;
+    el.classList.add('t');let n=0;
+    const iv=setInterval(()=>{
+      if(g!==gen){clearInterval(iv);return}
+      el.textContent=text.slice(0,++n);
+      if(n>=text.length){clearInterval(iv);el.classList.remove('t')}
+    },14);
+  },delay);
+}
+async function post(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const data=await r.json().catch(()=>({}));
+  return{ok:r.ok,status:r.status,data};
+}
+
+/* ---------- textes de l'interface ---------- */
+function applyLang(){
+  document.documentElement.lang=lang;$('#lang').value=lang;
+  $('#h1').replaceChildren(t('t1'),h('br'),h('em',{textContent:t('t2')}),' '+t('t3'));
+  $('#lead').textContent=t('lead');$('#q').placeholder=t('ph');$('#go').textContent=t('go');$('#foot').textContent=t('foot');
+  $('#chips').replaceChildren(...t('ex').map(x=>h('button',{className:'chip',textContent:x})));
+  document.querySelectorAll('#tabs button').forEach((b,i)=>b.textContent=t('tabs')[i]);
+  if(!cur)render();else{update()}
+}
+$('#lang').onchange=e=>{lang=e.target.value;try{localStorage.setItem('lang',lang)}catch(x){}applyLang()};
+$('#stack').replaceChildren(...ORDER.map((id,k)=>av(id,'--k:'+k)));
+$('#chips').onclick=e=>{if(e.target.classList.contains('chip')){$('#q').value=e.target.textContent;go()}};
+
+/* ---------- onglet Réponses ---------- */
+function render(){
+  const pr=$('#pr');pr.replaceChildren();$('#pd').replaceChildren();
+  if(!cur){pr.append(h('p',{className:'note',textContent:t('empty')}));update();return}
+  const g=gen,me=cur;
+  if(cur.summary!==false){
+    pr.append(h('div',{className:'sum'},h('small',{textContent:t('sum')}),h('p',{id:'sumt',textContent:cur.summary||t('think')})));
+  }
+  cur.results.forEach((r,k)=>{
+    const tx=h('div',{className:'tx'});
+    const crown=h('span',{className:'crown',textContent:t('crown')});crown.dataset.c=r.id;
+    const top=h('div',{className:'top'},h('span',{className:'nm',textContent:r.name}),h('span',{className:'pv',textContent:r.company+' · '+t('ai')+(r.ms?' · ⏱ '+(r.ms/1000).toFixed(1)+' s':'')}),crown);
+    const kids=[top,tx];
+    if(r.error){tx.className='tx err';tx.textContent=r.error==='not_configured'?t('nc'):t('un')}
+    else{
+      typeInto(tx,r.text,700+k*350,g);
+      const vt=h('button',{className:'vt'});vt.dataset.v=r.id;kids.push(vt);
+    }
+    const card=h('div',{className:'rep'},av(r.id),h('div',{className:'rb'},...kids));
+    card.style.setProperty('--c',color(r.id));card.style.animationDelay=(.15+k*.12)+'s';
+    pr.append(card);
+  });
+  update();
+}
+$('#pr').onclick=e=>{
+  const b=e.target.closest('[data-v]');if(!b||!cur)return;
+  const id=b.dataset.v;cur.voted[id]=!cur.voted[id];
+  V[id]=Math.max(0,(V[id]||0)+(cur.voted[id]?1:-1));saveV();update();
+};
+function update(){
+  const ids=cur?cur.results.filter(r=>!r.error).map(r=>r.id):[];
+  const best=ids.reduce((m,id)=>(V[id]||0)>(V[m]||0)?id:m,ids[0]);
+  document.querySelectorAll('.crown').forEach(c=>c.classList.toggle('on',!!best&&(V[best]||0)>0&&c.dataset.c===best));
+  document.querySelectorAll('.vt').forEach(b=>{
+    const id=b.dataset.v,on=!!(cur&&cur.voted[id]);
+    b.classList.toggle('on',on);b.style.setProperty('--c',color(id));b.textContent=(on?'❤️ ':'🤍 ')+(V[id]||0);
+  });
+  const rows=[...ORDER].sort((a,b)=>(V[b]||0)-(V[a]||0)),max=Math.max(1,V[rows[0]]||0);
+  $('#pk').replaceChildren(...rows.map(id=>{
+    const bar=h('div',{className:'bar'},h('i'));bar.firstChild.style.width=((V[id]||0)/max*100)+'%';
+    const row=h('div',{className:'rk'},h('b',{textContent:AI[id].n}),bar,h('b',{textContent:String(V[id]||0)}));
+    row.style.setProperty('--c',color(id));return row;
+  }),h('p',{className:'note',textContent:t('rknote')}));
+}
+
+/* ---------- onglets ---------- */
+$('#tabs').onclick=e=>{
+  const b=e.target.closest('[data-t]');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['r','d','k'].forEach(k=>$('#p'+k).classList.toggle('hid',b.dataset.t!==k));
+  if(b.dataset.t==='d')openDebate();
+};
+const showTab=k=>document.querySelector(`#tabs [data-t="${k}"]`).click();
+
+async function openDebate(){
+  if(!cur||cur.debate)return;
+  const me=cur,g=gen,pd=$('#pd');
+  const answers=answersOf(me);
+  if(answers.length<2){pd.replaceChildren(h('p',{className:'note',textContent:t('un')}));return}
+  cur.debate='loading';pd.replaceChildren(h('p',{className:'msg',textContent:t('deb')}));
+  try{
+    const r=await post('/api/debate',{question:me.question,lang:me.lang,answers});
+    if(cur!==me)return;
+    if(!r.ok){me.debate=null;pd.replaceChildren(h('p',{className:'msg',textContent:r.status===429?t('rate'):t('un')}));return}
+    me.debate=r.data.results;
+    pd.replaceChildren(...me.debate.filter(x=>!x.error).map((x,k)=>{
+      const tx=h('div',{className:'tx rx'});typeInto(tx,x.text,200+k*450,g);
+      const card=h('div',{className:'rep'},av(x.id),h('div',{className:'rb'},h('div',{className:'top'},h('span',{className:'nm',textContent:x.name}),h('span',{className:'pv',textContent:t('react')})),tx));
+      card.style.setProperty('--c',color(x.id));return card;
+    }));
+  }catch(e){me.debate=null;pd.replaceChildren(h('p',{className:'msg',textContent:t('net')}))}
+}
+const answersOf=c=>c.results.filter(r=>r.text).map(r=>({id:r.id,name:r.name,text:r.text}));
+
+/* ---------- poser une question ---------- */
+async function go(){
+  const question=$('#q').value.trim();
+  if(busy)return;
+  if(question.length<3||question.length>500){$('#msg').textContent=t('bad');return}
+  busy=true;$('#go').disabled=true;$('#msg').textContent=t('think');
+  try{
+    const r=await post('/api/ask',{question,lang});
+    if(!r.ok){$('#msg').textContent=r.status===429?t('rate'):t('bad');return}
+    gen++;
+    cur={question,lang,results:r.data.results,voted:{},summary:'',debate:null};
+    const me=cur,none=me.results.every(x=>x.error==='not_configured');
+    if(none){$('#msg').replaceChildren(t('allnc')+' ',h('a',{href:'/admin.html',textContent:t('adm')}));cur.summary=false}
+    else $('#msg').textContent='';
+    showTab('r');render();
+    $('#tabs').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});
+    const ans=answersOf(me);
+    if(ans.length>=2){
+      post('/api/summary',{question,lang,answers:ans}).then(s=>{
+        if(cur!==me)return;
+        me.summary=s.ok&&s.data.text?s.data.text:false;
+        const el=$('#sumt');
+        if(el&&me.summary)el.textContent=me.summary;else if(el)el.closest('.sum').remove();
+      }).catch(()=>{if(cur===me){me.summary=false;const el=$('#sumt');if(el)el.closest('.sum').remove()}});
+    }else me.summary=false;
+    if(me.summary===false)render();
+  }catch(e){$('#msg').textContent=t('net')}
+  finally{busy=false;$('#go').disabled=false}
+}
+$('#go').onclick=go;
+$('#q').onkeydown=e=>{if(e.key==='Enter')go()};
+applyLang();
+</script>
+</body>
+</html>
