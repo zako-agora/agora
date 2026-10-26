@@ -10,14 +10,14 @@ scriptSupabase.onload = () => {
 
   async function updateAuthUI() {
     if (!authBtn) return;
+    
+    // On récupère la session actuelle
     const { data: { session } } = await sbClient.auth.getSession();
     
     if (session) {
-      // === C'EST ICI QU'ON GÈRE LE PSEUDO ===
+      // L'utilisateur est connecté
       const username = session.user.user_metadata?.username;
       authBtn.textContent = username || session.user.email.split('@')[0];
-      // =====================================
-      
       authBtn.href = "#";
       authBtn.onclick = async (e) => {
         e.preventDefault();
@@ -25,9 +25,10 @@ scriptSupabase.onload = () => {
         window.location.reload();
       };
       authBtn.title = "Cliquez pour vous déconnecter";
-      authBtn.style.background = "rgba(16, 185, 129, 0.2)";
+      authBtn.style.background = "rgba(16, 185, 129, 0.2)"; // Vert
       authBtn.style.borderColor = "rgba(16, 185, 129, 0.5)";
     } else {
+      // L'utilisateur n'est pas connecté
       authBtn.textContent = "Connexion";
       authBtn.href = "/login.html";
       authBtn.onclick = null;
@@ -37,7 +38,10 @@ scriptSupabase.onload = () => {
     }
   }
 
-  updateAuthUi();
+  // On lance la vérification au chargement
+  updateAuthUI();
+
+  // On écoute les changements (si l'utilisateur se connecte dans un autre onglet)
   sbClient.auth.onAuthStateChange(() => {
     updateAuthUI();
   });
