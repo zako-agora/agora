@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Agora - Le Débat des IA</title>
+
+<!-- 🔥 BALISES POUR L'APPLICATION MOBILE (PWA) 🔥 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#06060a">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<!-- ---------------------------------------------- -->
+
 <!-- On garde la police Inter pour le côté moderne -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -60,11 +68,22 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .brand { font-weight: 800; font-size: 24px; letter-spacing: -0.5px; }
 .brand b { background: linear-gradient(90deg, var(--p1), var(--p2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
+.header-right { display: flex; align-items: center; gap: 8px; }
+
 select {
   font: inherit; color: var(--text-main); background: var(--bg-panel);
   border: 1px solid var(--border-glow); border-radius: 12px; padding: 8px 12px;
   backdrop-filter: blur(10px); cursor: pointer; outline: none;
 }
+
+/* BOUTON CONNEXION */
+.btn-login {
+  font-weight: 600; color: #fff; text-decoration: none; 
+  background: rgba(255,255,255,0.1); padding: 8px 16px; 
+  border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); 
+  transition: 0.3s; font-size: 14px;
+}
+.btn-login:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
 
 /* HERO SECTION */
 .hero { text-align: center; padding: 30px 0 20px; }
@@ -193,7 +212,10 @@ h1 em { font-style: normal; background: linear-gradient(90deg, var(--p3), var(--
 <div class="wrap">
   <header>
     <div class="brand">Agora<b>.</b></div>
-    <select id="lang" aria-label="Language"><option value="fr">Français</option><option value="en">English</option></select>
+    <div class="header-right">
+      <select id="lang" aria-label="Language"><option value="fr">Français</option><option value="en">English</option></select>
+      <a href="/login.html" class="btn-login">Connexion</a>
+    </div>
   </header>
 
   <section class="hero">
@@ -386,31 +408,4 @@ async function go(){
   busy=true;$('#go').disabled=true;$('#msg').textContent=t('think');
   try{
     const r=await post('/api/ask',{question,lang});
-    if(!r.ok){$('#msg').textContent=r.status===429?t('rate'):r.status===400?t('bad'):t('srv');return}
-    gen++;
-    cur={question,lang,results:r.data.results,voted:{},summary:'',debate:null,qid:rid()};
-    const me=cur,none=me.results.every(x=>x.error==='not_configured');
-    if(none){$('#msg').replaceChildren(t('allnc')+' ',h('a',{href:'/admin.html',textContent:t('adm')}));cur.summary=false}
-    else $('#msg').textContent='';
-    showTab('r');render();
-    $('#tabs').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});
-    const ans=answersOf(me);
-    if(ans.length>=2){
-      post('/api/summary',{question,lang,answers:ans}).then(s=>{
-        if(cur!==me)return;
-        me.summary=s.ok&&s.data.text?s.data.text:false;
-        const el=$('#sumt');
-        if(el&&me.summary)el.textContent=me.summary;else if(el)el.closest('.sum').remove();
-      }).catch(()=>{if(cur===me){me.summary=false;const el=$('#sumt');if(el)el.closest('.sum').remove()}});
-    }else me.summary=false;
-    if(me.summary===false)render();
-  }catch(e){$('#msg').textContent=t('net')}
-  finally{busy=false;$('#go').disabled=false}
-}
-$('#go').onclick=go;
-$('#q').onkeydown=e=>{if(e.key==='Enter')go()};
-applyLang();
-loadVotes();
-</script>
-</body>
-</html>
+    if(!r.ok){
