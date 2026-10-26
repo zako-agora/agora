@@ -71,8 +71,8 @@ async function ask(...args) {
 function dateLine(lang) {
   const d = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Paris' });
   return lang === 'fr'
-    ? `Date du jour : ${d}. Tes connaissances peuvent dater : si une information (modèles récents, prix, actualité) a pu changer depuis, dis-le plutôt que d’affirmer qu’elle est à jour.`
-    : `Today's date: ${d}. Your knowledge may be outdated: if some information (recent models, prices, news) may have changed since, say so instead of claiming it is up to date.`;
+    ? `Date du jour : ${d}. Tes connaissances peuvent dater : si une information (modèles récents, prix, actualité) a pu changer depuis, dis-le plutôt que d’affirmer qu’elle est à jour. N’affirme jamais connaître des études, classements ou chiffres de l’année en cours, et ne colle pas cette année sur des données plus anciennes.`
+    : `Today's date: ${d}. Your knowledge may be outdated: if some information (recent models, prices, news) may have changed since, say so instead of claiming it is up to date. Never claim to know studies, rankings or figures from the current year, and do not attach the current year to older data.`;
 }
 
 async function askRaw(p, cfg, question, lang, signal, sys) {
@@ -148,8 +148,8 @@ app.post('/api/ask', async (req, res) => {
 
 /* ---------- Débat entre IA et synthèse ---------- */
 const DEBATE_SYSTEM = {
-  fr: (me) => `Tu es ${me}, une IA qui participe à un débat sur un forum avec d’autres IA. Parle toujours à la première personne (« je ») et ne parle jamais de toi à la troisième personne. Adresse-toi aux autres IA par leur nom. Défends ta position : si tu n’es pas d’accord, dis précisément sur quel point et pourquoi ; n’approuve que si l’argument te convainc vraiment. Réponds en français, en 2 à 3 phrases maximum, sans titre ni liste, sans Markdown (pas d’astérisques).`,
-  en: (me) => `You are ${me}, an AI taking part in a forum debate with other AIs. Always speak in the first person ("I") and never refer to yourself in the third person. Address the other AIs by name. Defend your position: if you disagree, say precisely on what point and why; only agree if the argument truly convinces you. Reply in English, in 2 to 3 sentences maximum, with no title, no list and no Markdown (no asterisks).`,
+  fr: (me) => `Tu es ${me}, une IA qui participe à un débat sur un forum avec d’autres IA. Parle toujours à la première personne (« je ») et ne parle jamais de toi à la troisième personne. Adresse-toi aux autres IA par leur nom, jamais au tien (n’écris jamais « ${me}, » pour t’adresser quelqu’un). Défends ta position : si tu n’es pas d’accord, dis précisément sur quel point et pourquoi ; n’approuve que si l’argument te convainc vraiment. Réponds en français, en 2 à 3 phrases maximum, sans titre ni liste, sans Markdown (pas d’astérisques).`,
+  en: (me) => `You are ${me}, an AI taking part in a forum debate with other AIs. Always speak in the first person ("I") and never refer to yourself in the third person. Address the other AIs by name, never by your own name (never write "${me}," to address someone). Defend your position: if you disagree, say precisely on what point and why; only agree if the argument truly convinces you. Reply in English, in 2 to 3 sentences maximum, with no title, no list and no Markdown (no asterisks).`,
 };
 const SUMMARY_SYSTEM = {
   fr: 'Tu rédiges une synthèse neutre et courte, en français, sans titre ni liste, sans Markdown (pas d’astérisques).',
@@ -216,8 +216,8 @@ app.post('/api/summary', async (req, res) => {
 /* ---------- Arbitre impartial : conclusion du débat ---------- */
 const listNames = (arr, and) => arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ' + and + ' ' + arr[arr.length - 1];
 const VERDICT_SYSTEM = {
-  fr: (names) => `Tu es l’arbitre d’un débat sur un forum entre ${listNames(names, 'et')}. Tu joues uniquement le rôle d’arbitre extérieur et impartial : même si tu es le même modèle que l’un des participants, tu ne parles jamais en son nom, tu ne le défends pas et tu ne prends parti pour personne. Tu t’adresses directement à la personne qui a posé la question, en la tutoyant. N’attribue une position à une IA que si elle l’a réellement écrite ; en cas de doute, ne l’attribue pas. Réponds en français, en 4 phrases maximum, en un seul paragraphe, sans titre, sans liste et sans Markdown (pas d’astérisques).`,
-  en: (names) => `You are the referee of a forum debate between ${listNames(names, 'and')}. You act only as an outside, impartial referee: even if you are the same model as one of the participants, you never speak on its behalf, never defend it and take no side. You address the person who asked the question directly. Only attribute a position to an AI if it actually wrote it; when unsure, do not attribute it. Reply in English, in 4 sentences maximum, in a single paragraph, with no title, no list and no Markdown (no asterisks).`,
+  fr: (names) => `Tu es l’arbitre d’un débat sur un forum entre ${listNames(names, 'et')}. Tu joues uniquement le rôle d’arbitre extérieur et impartial : même si tu es le même modèle que l’un des participants, tu ne parles jamais en son nom, tu ne le défends pas et tu ne prends parti pour personne. Tu t’adresses directement à la personne qui a posé la question, en la tutoyant. N’attribue une position à une IA que si elle l’a réellement écrite ; en cas de doute, ne l’attribue pas. Réponds en français, en 4 phrases maximum, en un seul paragraphe (aucun saut de ligne), sans titre, sans liste et sans Markdown (pas d’astérisques).`,
+  en: (names) => `You are the referee of a forum debate between ${listNames(names, 'and')}. You act only as an outside, impartial referee: even if you are the same model as one of the participants, you never speak on its behalf, never defend it and take no side. You address the person who asked the question directly. Only attribute a position to an AI if it actually wrote it; when unsure, do not attribute it. Reply in English, in 4 sentences maximum, in a single paragraph (no line breaks), with no title, no list and no Markdown (no asterisks).`,
 };
 const verdictHits = new Map();
 
