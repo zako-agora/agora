@@ -13,8 +13,11 @@ scriptSupabase.onload = () => {
     const { data: { session } } = await sbClient.auth.getSession();
     
     if (session) {
-      const email = session.user.email;
-      authBtn.textContent = email.split('@')[0];
+      // === C'EST ICI QU'ON GÈRE LE PSEUDO ===
+      const username = session.user.user_metadata?.username;
+      authBtn.textContent = username || session.user.email.split('@')[0];
+      // =====================================
+      
       authBtn.href = "#";
       authBtn.onclick = async (e) => {
         e.preventDefault();
@@ -34,7 +37,7 @@ scriptSupabase.onload = () => {
     }
   }
 
-  updateAuthUI();
+  updateAuthUi();
   sbClient.auth.onAuthStateChange(() => {
     updateAuthUI();
   });
