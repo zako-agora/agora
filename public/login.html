@@ -47,11 +47,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Vos clés Supabase
     const SUPABASE_URL = 'https://tcfglmmhxkmfnhmpwkuv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjZmdsbW1oeGttZm5obXB3a3V2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTE0NDgsImV4cCI6MjEwODU4NzQ0OH0.1nI4tI7kx9Bgbs6GgwV0WLNyAdZMgXHz5510eBM9Q7E';
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // On utilise un nom différent (supabaseClient) pour éviter le conflit
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function toggleForms() {
       document.getElementById('signup-form').classList.toggle('hidden');
@@ -62,7 +62,9 @@
     async function signUp() {
       const email = document.getElementById('signup-email').value;
       const password = document.getElementById('signup-password').value;
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      
+      // Utilisation de supabaseClient ici
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
       
       if (error) {
         document.getElementById('message').textContent = error.message;
@@ -77,7 +79,9 @@
     async function signIn() {
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      // Utilisation de supabaseClient ici
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       
       if (error) {
         document.getElementById('message').textContent = error.message;
