@@ -30,9 +30,7 @@
     
     <!-- Formulaire d'inscription -->
     <div id="signup-form">
-      <!-- NOUVEAU CHAMP PSEUDO ICI -->
       <input type="text" id="signup-username" placeholder="Choisis ton pseudo" autocomplete="nickname">
-      
       <input type="email" id="signup-email" placeholder="Email" autocomplete="email">
       <input type="password" id="signup-password" placeholder="Mot de passe (6 caractères min)" autocomplete="new-password">
       <button onclick="signUp()">Créer un compte</button>
@@ -74,13 +72,30 @@
         return;
       }
 
-      // On envoie le pseudo à Supabase dans "options.data"
+      // 1. On vérifie dans la base si le pseudo existe déjà
+      const { data: existingUser, error: checkError } = await supabaseClient
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (checkError) {
+        document.getElementById('message').textContent = "Erreur de vérification : " + checkError.message;
+        document.getElementById('message').style.color = '#ef4444';
+        return;
+      }
+
+      if (existingUser) {
+        document.getElementById('message').textContent = "Ce pseudo est déjà utilisé. Choisis-en un autre !";
+        document.getElementById('message').style.color = '#ef4444';
+        return; // On arrête ici, on ne crée pas le compte
+      }
+
+      // 2. Si le pseudo est libre, on crée le compte
       const { data, error } = await supabaseClient.auth.signUp({ 
         email, 
         password,
-        options: {
-          data: { username: username }
-        }
+        options: { data: { username: username } }
       });
       
       if (error) {
