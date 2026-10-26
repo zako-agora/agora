@@ -11,8 +11,8 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.static('public'));
 
 const SYSTEM = {
-  fr: 'Tu réponds sur un forum où plusieurs IA donnent leur avis. Réponds en français, en 3 à 5 phrases maximum, sans titre ni liste.',
-  en: 'You are answering on a forum where several AIs share their views. Reply in English, in 3 to 5 sentences maximum, with no title and no list.',
+  fr: 'Tu réponds sur un forum où plusieurs IA donnent leur avis. Réponds en français, en 3 à 5 phrases maximum, sans titre ni liste, sans Markdown (pas d’astérisques). Réponds précisément à la question posée, sans changer de sujet. Si elle est ambiguë, dis en une courte phrase l’hypothèse que tu fais.',
+  en: 'You are answering on a forum where several AIs share their views. Reply in English, in 3 to 5 sentences maximum, with no title, no list and no Markdown (no asterisks). Answer the question exactly as asked, without changing the subject. If it is ambiguous, state in one short sentence the assumption you are making.',
 };
 
 const PROVIDERS = [
@@ -53,7 +53,21 @@ async function readJson(res) {
   return res.json();
 }
 
-async function ask(p, cfg, question, lang, signal, sys) {
+// Retire le Markdown (**gras**, *italique*, # titres, `code`) si une IA en met malgré la consigne
+function stripMd(t) {
+  return String(t)
+    .replace(/\*\*([^*]+?)\*\*/g, '$1')
+    .replace(/__([^_\n]+?)__/g, '$1')
+    .replace(/(?<![\w*])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![\w*])/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/`([^`\n]+)`/g, '$1');
+}
+async function ask(...args) {
+  const text = await askRaw(...args);
+  return text ? stripMd(text) : text;
+}
+
+async function askRaw(p, cfg, question, lang, signal, sys) {
   const system = sys ?? SYSTEM[lang];
 
   if (p.type === 'anthropic') {
@@ -126,12 +140,12 @@ app.post('/api/ask', async (req, res) => {
 
 /* ---------- Débat entre IA et synthèse ---------- */
 const DEBATE_SYSTEM = {
-  fr: (me) => `Tu es ${me}, une IA qui participe à un débat sur un forum avec d’autres IA. Parle toujours à la première personne (« je ») et ne parle jamais de toi à la troisième personne. Adresse-toi aux autres IA par leur nom. Défends ta position : si tu n’es pas d’accord, dis précisément sur quel point et pourquoi ; n’approuve que si l’argument te convainc vraiment. Réponds en français, en 2 à 3 phrases maximum, sans titre ni liste.`,
-  en: (me) => `You are ${me}, an AI taking part in a forum debate with other AIs. Always speak in the first person ("I") and never refer to yourself in the third person. Address the other AIs by name. Defend your position: if you disagree, say precisely on what point and why; only agree if the argument truly convinces you. Reply in English, in 2 to 3 sentences maximum, with no title and no list.`,
+  fr: (me) => `Tu es ${me}, une IA qui participe à un débat sur un forum avec d’autres IA. Parle toujours à la première personne (« je ») et ne parle jamais de toi à la troisième personne. Adresse-toi aux autres IA par leur nom. Défends ta position : si tu n’es pas d’accord, dis précisément sur quel point et pourquoi ; n’approuve que si l’argument te convainc vraiment. Réponds en français, en 2 à 3 phrases maximum, sans titre ni liste, sans Markdown (pas d’astérisques).`,
+  en: (me) => `You are ${me}, an AI taking part in a forum debate with other AIs. Always speak in the first person ("I") and never refer to yourself in the third person. Address the other AIs by name. Defend your position: if you disagree, say precisely on what point and why; only agree if the argument truly convinces you. Reply in English, in 2 to 3 sentences maximum, with no title, no list and no Markdown (no asterisks).`,
 };
 const SUMMARY_SYSTEM = {
-  fr: 'Tu rédiges une synthèse neutre et courte, en français, sans titre ni liste.',
-  en: 'You write a short, neutral summary in English, with no title and no list.',
+  fr: 'Tu rédiges une synthèse neutre et courte, en français, sans titre ni liste, sans Markdown (pas d’astérisques).',
+  en: 'You write a short, neutral summary in English, with no title, no list and no Markdown (no asterisks).',
 };
 const clean = (v, n) => String(v ?? '').slice(0, n);
 function readAnswers(body) {
