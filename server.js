@@ -269,6 +269,63 @@ app.post('/api/verdict', async (req, res) => {
   res.status(502).json({ error: 'unavailable' });
 });
 
+/* ---------- Votes partagés entre tous les visiteurs (Upstash Redis, via REST) ---------- */
+const REDIS_URL = (process.env.UPSTASH_REDIS_REST_URL || '').trim().replace(/\/$/, '');
+const REDIS_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || '').trim();
+const votesEnabled = () => !!(REDIS_URL && REDIS_TOKEN);
+const VOTE_IDS = new Set(PROVIDERS.map((p) => p.id));
+const voteHits = new Map();
+const readVoteHits = new Map();
+
+async function redis(cmd) {
+  const r = await fetch(REDIS_URL, {
+    method: 'POST',
+    signal: AbortSignal.timeout(8_000),
+    headers: { authorization: `Bearer ${REDIS_TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify(cmd),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+  return d.result;
+}
+
+async function readTally() {
+  const raw = await redis(['HGETALL', 'agora:votes']);
+  const pairs = Array.isArray(raw) ? Object.fromEntries(Array.from({ length: raw.length / 2 }, (_, i) => [raw[2 * i], raw[2 * i + 1]])) : raw || {};
+  return Object.fromEntries(PROVIDERS.map((p) => [p.id, Math.max(0, Number(pairs[p.id]) || 0)]));
+}
+
+app.get('/api/votes', async (req, res) => {
+  if (!votesEnabled()) return res.status(503).json({ error: 'votes_disabled' });
+  if (rateHit(readVoteHits, req.ip, 60)) return res.status(429).json({ error: 'rate_limit' });
+  try { res.json({ votes: await readTally() }); }
+  catch (e) { console.error('[votes]', e.message); res.status(502).json({ error: 'unavailable' }); }
+});
+
+// Un visiteur (voter) ne peut compter qu'une fois par réponse et par question (qid) ; recliquer retire son vote
+app.post('/api/vote', async (req, res) => {
+  if (!votesEnabled()) return res.status(503).json({ error: 'votes_disabled' });
+  if (rateHit(voteHits, req.ip, 30)) return res.status(429).json({ error: 'rate_limit' });
+  const { qid, voter, id, on } = req.body || {};
+  const okId = (v) => typeof v === 'string' && /^[\w-]{8,64}$/.test(v);
+  if (!okId(qid) || !okId(voter) || !VOTE_IDS.has(id) || typeof on !== 'boolean') return res.status(400).json({ error: 'bad_request' });
+  try {
+    const key = `agora:v:${qid}:${id}`;
+    if (on) {
+      if ((await redis(['SADD', key, voter])) === 1) {
+        await redis(['EXPIRE', key, 2_592_000]); // 30 jours
+        await redis(['HINCRBY', 'agora:votes', id, 1]);
+      }
+    } else if ((await redis(['SREM', key, voter])) === 1) {
+      await redis(['HINCRBY', 'agora:votes', id, -1]);
+    }
+    res.json({ votes: await readTally() });
+  } catch (e) {
+    console.error('[vote]', e.message);
+    res.status(502).json({ error: 'unavailable' });
+  }
+});
+
 /* ---------- Administration (protégée par ADMIN_PASSWORD) ---------- */
 function adminAuth(req, res, next) {
   const pw = process.env.ADMIN_PASSWORD;
