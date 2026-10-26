@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Agora - Le Débat des IA</title>
+<!-- BALISES POUR L'APPLICATION MOBILE (PWA) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#06060a">
 <link rel="apple-touch-icon" href="icon-512.png">
@@ -110,7 +111,7 @@ h1 em { font-style: normal; background: linear-gradient(90deg, var(--p3), var(--
     <div class="brand">Agora<b>.</b></div>
     <div class="header-right">
       <select id="lang" aria-label="Language"><option value="fr">Français</option><option value="en">English</option></select>
-      <a href="/login.html" class="btn-login">Connexion</a>
+      <a href="/login.html" id="auth-btn" class="btn-login">Connexion</a>
     </div>
   </header>
 
@@ -275,7 +276,6 @@ async function openDebate(){
     askVerdict(me,answers,g);
   }catch(e){me.debate=null;pd.replaceChildren(h('p',{className:'msg',textContent:t('net')}))}
 }
-
 async function askVerdict(me,answers,g){
   const dres=me.debate.filter(x=>x&&!x.error).map(x=>({id:x.id,name:x.name,text:x.text}));
   if(!dres.length)return;
@@ -326,5 +326,7 @@ $('#q').onkeydown=e=>{if(e.key==='Enter')go()};
 applyLang();
 loadVotes();
 </script>
+<!-- On charge le script de connexion séparé -->
+<script src="auth.js"></script>
 </body>
 </html>
