@@ -203,22 +203,14 @@ app.post('/api/summary', async (req, res) => {
   const answers = readAnswers(req.body);
   if (question.length < 3 || answers.length < 2) return res.status(400).json({ error: 'bad_request' });
 
-  const store = loadStore();
-  const p = [PROVIDERS[0], ...PROVIDERS].find((x) => { const c = config(x, store); return c.key && c.model; });
-  if (!p) return res.status(503).json({ error: 'not_configured' });
-
   const board = answers.map((a) => `${a.name} : ${a.text}`).join('\n\n');
   const prompt = lang === 'fr'
     ? `Question : « ${question} »\n\nRéponses des IA :\n\n${board}\n\nRésume en 2 phrases maximum ce sur quoi ces IA s’accordent, et signale un désaccord important s’il y en a un.`
     : `Question: "${question}"\n\nAIs' answers:\n\n${board}\n\nSummarize in 2 sentences maximum what these AIs agree on, and point out any important disagreement.`;
-  try {
-    const text = await ask(p, config(p, store), prompt, lang, AbortSignal.timeout(60_000), SUMMARY_SYSTEM[lang]);
-    if (!text) throw new Error('empty answer');
-    res.json({ text: text.trim() });
-  } catch (e) {
-    console.error('[synthèse]', e.message);
-    res.status(502).json({ error: 'unavailable' });
-  }
+
+  const out = await askFirstAvailable(ARBITER_ORDER, loadStore(), prompt, lang, SUMMARY_SYSTEM[lang], 'synthèse');
+  if (!out) return res.status(502).json({ error: 'unavailable' });
+  res.json({ text: out.text });
 });
 
 /* ---------- Arbitre impartial : conclusion du débat ---------- */
@@ -232,6 +224,21 @@ const verdictHits = new Map();
 // Ordre des arbitres possibles. On peut forcer le premier avec ARBITER_PROVIDER (ex : mi).
 const ARBITER_ORDER = [...new Set([...(process.env.ARBITER_PROVIDER ? [process.env.ARBITER_PROVIDER] : []), 'cl', 'gp', 'mi', 'gr', 'ge'])]
   .map((id) => PROVIDERS.find((p) => p.id === id)).filter(Boolean);
+
+// Essaie les IA dans l'ordre : si l'une échoue (crédit, quota, panne), la suivante prend le relais
+async function askFirstAvailable(order, store, prompt, lang, system, label) {
+  for (const p of order) {
+    const cfg = config(p, store);
+    if (!cfg.key || !cfg.model) continue;
+    try {
+      const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), system);
+      if (text) return { text: text.trim(), by: p.name };
+    } catch (e) {
+      console.error(`[${label} ${p.name}]`, e.message);
+    }
+  }
+  return null;
+}
 
 app.post('/api/verdict', async (req, res) => {
   if (rateHit(verdictHits, req.ip, 10)) return res.status(429).json({ error: 'rate_limit' });
