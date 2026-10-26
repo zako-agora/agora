@@ -67,8 +67,16 @@ async function ask(...args) {
   return text ? stripMd(text) : text;
 }
 
+// Ligne ajoutée à tous les prompts : les IA ne connaissent pas la date du jour
+function dateLine(lang) {
+  const d = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Paris' });
+  return lang === 'fr'
+    ? `Date du jour : ${d}. Tes connaissances peuvent dater : si une information (modèles récents, prix, actualité) a pu changer depuis, dis-le plutôt que d’affirmer qu’elle est à jour.`
+    : `Today's date: ${d}. Your knowledge may be outdated: if some information (recent models, prices, news) may have changed since, say so instead of claiming it is up to date.`;
+}
+
 async function askRaw(p, cfg, question, lang, signal, sys) {
-  const system = sys ?? SYSTEM[lang];
+  const system = (sys ?? SYSTEM[lang]) + '\n\n' + dateLine(lang);
 
   if (p.type === 'anthropic') {
     const d = await readJson(await fetch('https://api.anthropic.com/v1/messages', {
@@ -214,9 +222,10 @@ app.post('/api/summary', async (req, res) => {
 });
 
 /* ---------- Arbitre impartial : conclusion du débat ---------- */
+const listNames = (arr, and) => arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ' + and + ' ' + arr[arr.length - 1];
 const VERDICT_SYSTEM = {
-  fr: 'Tu es l’arbitre impartial d’un débat entre plusieurs IA sur un forum. Tu ne prends parti pour aucune IA, même si tu es toi-même l’un des modèles qui débattent. Tu t’appuies uniquement sur les arguments échangés. Réponds en français, en 3 à 4 phrases maximum, sans titre, sans liste et sans Markdown (pas d’astérisques).',
-  en: 'You are the impartial referee of a forum debate between several AIs. You take no side, even if you are one of the models that are debating. You rely only on the arguments that were exchanged. Reply in English, in 3 to 4 sentences maximum, with no title, no list and no Markdown (no asterisks).',
+  fr: (names) => `Tu es l’arbitre d’un débat sur un forum entre ${listNames(names, 'et')}. Tu joues uniquement le rôle d’arbitre extérieur et impartial : même si tu es le même modèle que l’un des participants, tu ne parles jamais en son nom, tu ne le défends pas et tu ne prends parti pour personne. Tu t’adresses directement à la personne qui a posé la question, en la tutoyant. N’attribue une position à une IA que si elle l’a réellement écrite ; en cas de doute, ne l’attribue pas. Réponds en français, en 4 phrases maximum, en un seul paragraphe, sans titre, sans liste et sans Markdown (pas d’astérisques).`,
+  en: (names) => `You are the referee of a forum debate between ${listNames(names, 'and')}. You act only as an outside, impartial referee: even if you are the same model as one of the participants, you never speak on its behalf, never defend it and take no side. You address the person who asked the question directly. Only attribute a position to an AI if it actually wrote it; when unsure, do not attribute it. Reply in English, in 4 sentences maximum, in a single paragraph, with no title, no list and no Markdown (no asterisks).`,
 };
 const verdictHits = new Map();
 
@@ -235,7 +244,7 @@ app.post('/api/verdict', async (req, res) => {
   const first = answers.map((a) => `${a.name} : ${a.text}`).join('\n\n');
   const react = debate.map((a) => `${a.name} : ${a.text}`).join('\n\n');
   const prompt = lang === 'fr'
-    ? `Question du forum : « ${question} »\n\nRéponses initiales des IA :\n\n${first}\n\nÉchanges du débat :\n\n${react}\n\nDonne ta conclusion : ce sur quoi elles s’accordent, le désaccord qui reste, puis une conclusion utile pour la personne qui a posé la question. Ne désigne un gagnant que si les arguments le justifient clairement.`
+    ? `Question du forum : « ${question} »\n\nRéponses initiales des IA :\n\n${first}\n\nÉchanges du débat :\n\n${react}\n\nDonne ta conclusion : ce sur quoi elles s’accordent, le désaccord qui reste, puis un conseil utile pour toi qui as posé la question. Ne désigne un gagnant que si les arguments le justifient clairement.`
     : `Forum question: "${question}"\n\nThe AIs' initial answers:\n\n${first}\n\nDebate exchanges:\n\n${react}\n\nGive your conclusion: what they agree on, the disagreement that remains, then a useful conclusion for the person who asked. Only name a winner if the arguments clearly justify it.`;
 
   // On essaie les arbitres dans l'ordre : si l'un échoue (crédit, quota…), le suivant prend le relais
@@ -244,7 +253,7 @@ app.post('/api/verdict', async (req, res) => {
     const cfg = config(p, store);
     if (!cfg.key || !cfg.model) continue;
     try {
-      const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), VERDICT_SYSTEM[lang]);
+      const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), VERDICT_SYSTEM[lang]([...new Set(answers.map((a) => a.name))]));
       if (text) return res.json({ text: text.trim(), by: p.name });
     } catch (e) {
       console.error(`[arbitre ${p.name}]`, e.message);
