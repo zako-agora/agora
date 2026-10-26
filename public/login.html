@@ -28,13 +28,18 @@
     <h1>Agora.</h1>
     <p class="sub">Connecte-toi pour débattre avec les IA</p>
     
+    <!-- Formulaire d'inscription -->
     <div id="signup-form">
+      <!-- NOUVEAU CHAMP PSEUDO ICI -->
+      <input type="text" id="signup-username" placeholder="Choisis ton pseudo" autocomplete="nickname">
+      
       <input type="email" id="signup-email" placeholder="Email" autocomplete="email">
       <input type="password" id="signup-password" placeholder="Mot de passe (6 caractères min)" autocomplete="new-password">
       <button onclick="signUp()">Créer un compte</button>
       <button class="secondary" onclick="toggleForms()">Déjà un compte ? Se connecter</button>
     </div>
 
+    <!-- Formulaire de connexion -->
     <div id="login-form" class="hidden">
       <input type="email" id="login-email" placeholder="Email" autocomplete="email">
       <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password">
@@ -50,7 +55,6 @@
     const SUPABASE_URL = 'https://tcfglmmhxkmfnhmpwkuv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjZmdsbW1oeGttZm5obXB3a3V2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTE0NDgsImV4cCI6MjEwODU4NzQ0OH0.1nI4tI7kx9Bgbs6GgwV0WLNyAdZMgXHz5510eBM9Q7E';
     
-    // On utilise un nom différent (supabaseClient) pour éviter le conflit
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function toggleForms() {
@@ -60,11 +64,24 @@
     }
 
     async function signUp() {
+      const username = document.getElementById('signup-username').value.trim();
       const email = document.getElementById('signup-email').value;
       const password = document.getElementById('signup-password').value;
       
-      // Utilisation de supabaseClient ici
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (username.length < 3) {
+        document.getElementById('message').textContent = "Le pseudo doit faire au moins 3 caractères.";
+        document.getElementById('message').style.color = '#ef4444';
+        return;
+      }
+
+      // On envoie le pseudo à Supabase dans "options.data"
+      const { data, error } = await supabaseClient.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: { username: username }
+        }
+      });
       
       if (error) {
         document.getElementById('message').textContent = error.message;
@@ -80,7 +97,6 @@
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
       
-      // Utilisation de supabaseClient ici
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       
       if (error) {
