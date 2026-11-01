@@ -489,7 +489,14 @@ if(SR){
       const k=e.error;
       $('#msg').textContent=(k==='not-allowed'||k==='service-not-allowed')?t('micdenied'):k==='no-speech'?t('nospeech'):k==='aborted'?'':t('micerr');
     };
-    r.onend=()=>{rec=null;micState(false);if(got)$('#q').focus()};
+   r.onend=()=>{
+  rec=null;micState(false);
+  if(got) {
+    $('#q').focus();
+    // On lance la demande automatiquement après la dictée
+    setTimeout(() => { go(); }, 500);
+  }
+};
     try{r.start()}catch(err){rec=null;micState(false)}
   };
 }
