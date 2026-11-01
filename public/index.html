@@ -179,6 +179,17 @@ h1 em { font-style: normal; background: linear-gradient(90deg, var(--p3), var(--
 .mic.on { color: #fff; background: #dc2626; border-color: transparent; animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); } 50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } }
 
+/* MESSAGES FLOTTANTS, QUESTIONS SENSIBLES */
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; width: max-content; max-width: min(92vw, 420px); padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.5; color: #fff; background: rgba(18, 18, 28, 0.96); border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: fadeUp 0.3s both; }
+.notice { border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; font-size: 14px; line-height: 1.6; color: var(--text-main); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.35); }
+.notice a, .crisis a.ext { color: var(--p3); font-weight: 600; }
+.crisis { border-radius: 20px; padding: 22px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(236, 72, 153, 0.12)); border: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 10px 30px rgba(251, 191, 36, 0.08); animation: fadeUp 0.5s both; }
+.crisis h2 { margin: 0 0 10px; font-size: 1.3rem; line-height: 1.3; }
+.crisis p { margin: 10px 0; line-height: 1.7; color: #e2e8f0; }
+.crisis ul { list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 8px; }
+.crisis li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); }
+.crisis li a { color: #fff; font-weight: 800; text-decoration: none; padding: 6px 12px; border-radius: 99px; background: rgba(251, 191, 36, 0.25); }
+
 /* COURONNE (Plébiscitée) */
 .crown { font-size: 11px; font-weight: 800; color: #000; background: #fbbf24; border-radius: 99px; padding: 4px 10px; display: none; box-shadow: 0 0 15px rgba(251, 191, 36, 0.6); }
 .crown.on { display: inline-block; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
@@ -237,20 +248,20 @@ const T={
     tabs:['Réponses','Débat','Classement'],sum:'✨ Synthèse des IA',think:'Les IA réfléchissent…',empty:'Pose une question pour voir les réponses des 5 IA.',
     ai:'IA',crown:'👑 Plébiscitée',nc:'Non configurée',un:'Indisponible pour le moment',rate:'Trop de questions, réessaie dans une minute.',bad:'La question doit faire entre 3 et 500 caractères.',net:'Connexion impossible au serveur.',srv:'Le serveur ne répond pas pour le moment, réessaie dans un instant.',
     allnc:'Aucune IA n’est configurée. Ajoute tes clés dans la page d’administration.',adm:'Ouvrir l’administration',deb:'Les IA réagissent entre elles…',rknote:'Tes votes sur cet appareil',rknoteAll:'Votes de tous les visiteurs',
-    foot:'Les réponses sont générées par des intelligences artificielles et peuvent contenir des erreurs.',react:'réagit aux autres',arb:'⚖️ Conclusion de l’arbitre',arbthink:'L’arbitre délibère…',by:'Arbitre :',mic:'Dicter ma question',micstop:'Arrêter la dictée',micdenied:'Accès au micro refusé : autorise le micro dans ton navigateur.',nospeech:'Je n’ai rien entendu, réessaie.',micerr:'La dictée vocale a échoué, réessaie ou tape ta question.',listen:'Écouter',stopl:'Arrêter la lecture'},
+    foot:'Les réponses sont générées par des intelligences artificielles et peuvent contenir des erreurs.',react:'réagit aux autres',arb:'⚖️ Conclusion de l’arbitre',arbthink:'L’arbitre délibère…',by:'Arbitre :',mic:'Dicter ma question',micstop:'Arrêter la dictée',micdenied:'Accès au micro refusé : autorise le micro dans ton navigateur.',nospeech:'Je n’ai rien entendu, réessaie.',micerr:'La dictée vocale a échoué, réessaie ou tape ta question.',listen:'Écouter',stopl:'Arrêter la lecture',spkerr:'La lecture vocale ne marche pas sur cet appareil. Vérifie le volume et le mode silencieux.',iosHint:'🔇 Pas de son ? Désactive le mode silencieux de ton iPhone (interrupteur sur le côté) et monte le volume.',crT:'Tu n’as pas à traverser ça seul(e)',crB:'Ce que tu viens d’écrire est important. Ce site compare des IA et n’est pas fait pour t’accompagner dans un moment aussi difficile, mais des personnes formées peuvent t’écouter, maintenant :',crS:'Tu peux aussi écrire tout de suite à quelqu’un de proche : « Peux-tu m’appeler ? » ou « Peux-tu venir ? » suffit.',crE:'Si tu es en danger immédiat, appelle les urgences : le 112 en Europe, le 911 en Amérique du Nord, ou le numéro d’urgence de ton pays.',crO:'Trouver une ligne d’écoute dans un autre pays (findahelpline.com)',nbWell:'💛 Si tu traverses une période difficile, tu n’es pas seul(e). En France, le 3114 est gratuit et ouvert 24h/24 ; ailleurs, cherche une ligne d’écoute sur',nbAdv:'ℹ️ Ces réponses sont générées par des IA et ne remplacent pas l’avis d’un professionnel (médecin, avocat, conseiller financier).'},
   en:{t1:'One question.',t2:'Five AIs',t3:'answer you.',lead:'Compare the views of several artificial intelligences at once, and vote for the best answer.',
     ph:'Ask your question…',go:'Ask',ex:['How do I stop procrastinating?','Should I learn to code?','How do I negotiate my salary?'],
     tabs:['Answers','Debate','Ranking'],sum:'✨ Summary of the AIs',think:'The AIs are thinking…',empty:'Ask a question to see the 5 AIs’ answers.',
     ai:'AI',crown:'👑 Top pick',nc:'Not configured',un:'Unavailable right now',rate:'Too many questions, try again in a minute.',bad:'The question must be between 3 and 500 characters.',net:'Cannot reach the server.',srv:'The server is not responding right now, try again in a moment.',
     allnc:'No AI is configured. Add your keys in the admin page.',adm:'Open administration',deb:'The AIs are reacting to each other…',rknote:'Your votes on this device',rknoteAll:'Votes from all visitors',
-    foot:'Answers are generated by artificial intelligence and may contain mistakes.',react:'reacts to the others',arb:'⚖️ Referee’s conclusion',arbthink:'The referee is deliberating…',by:'Referee:',mic:'Dictate my question',micstop:'Stop dictation',micdenied:'Microphone access denied: allow the microphone in your browser.',nospeech:'I did not hear anything, try again.',micerr:'Voice dictation failed, try again or type your question.',listen:'Listen',stopl:'Stop playback'}
+    foot:'Answers are generated by artificial intelligence and may contain mistakes.',react:'reacts to the others',arb:'⚖️ Referee’s conclusion',arbthink:'The referee is deliberating…',by:'Referee:',mic:'Dictate my question',micstop:'Stop dictation',micdenied:'Microphone access denied: allow the microphone in your browser.',nospeech:'I did not hear anything, try again.',micerr:'Voice dictation failed, try again or type your question.',listen:'Listen',stopl:'Stop playback',spkerr:'Read-aloud does not work on this device. Check the volume and silent mode.',iosHint:'🔇 No sound? Turn off your iPhone’s silent mode (switch on the side) and turn up the volume.',crT:'You don’t have to go through this alone',crB:'What you just wrote matters. This site compares AIs and is not made to support you through something this hard, but trained people can listen to you right now:',crS:'You can also message someone close to you right now: “Can you call me?” or “Can you come over?” is enough.',crE:'If you are in immediate danger, call emergency services: 112 in Europe, 911 in North America, or your country’s emergency number.',crO:'Find a helpline in another country (findahelpline.com)',nbWell:'💛 If you are going through a hard time, you are not alone. In France, 3114 is free and open 24/7; elsewhere, look for a helpline on',nbAdv:'ℹ️ These answers are generated by AIs and do not replace the advice of a professional (doctor, lawyer, financial advisor).'}
 };
 const $=s=>document.querySelector(s);
 const h=(tag,props={},...kids)=>{const e=document.createElement(tag);Object.assign(e,props);e.append(...kids);return e};
 const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
 let lang='fr';try{lang=localStorage.getItem('lang')||((navigator.language||'fr').startsWith('en')?'en':'fr')}catch(e){}
 const t=k=>T[lang][k];
-let cur=null,gen=0,busy=false,V={},shared=false;
+let cur=null,gen=0,busy=false,V={},shared=false,notice=null;
 const rid=()=>((window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12)).replace(/[^\w-]/g,'');
 let VOTER='';try{VOTER=localStorage.getItem('agora-voter')||'';if(!VOTER){VOTER=rid();localStorage.setItem('agora-voter',VOTER)}}catch(e){VOTER=rid()}
 try{V=JSON.parse(localStorage.getItem('agora-votes')||'{}')||{}}catch(e){}
@@ -277,43 +288,118 @@ async function post(url,body){
   return{ok:r.ok,status:r.status,data};
 }
 
-/* ---------- voix : lecture à voix haute ---------- */
+/* ---------- messages flottants ---------- */
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(e=>e.remove());
+  const e=h('div',{className:'toast',textContent:msg});e.setAttribute('role','status');
+  document.body.append(e);setTimeout(()=>e.remove(),7000);
+}
+
+/* ---------- voix : lecture à voix haute (voix naturelle ElevenLabs, sinon voix du navigateur) ---------- */
 const TTS='speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
-const PITCH={cl:1,gp:0.9,ge:1.1,mi:0.95,gr:0.8};
-let speakingBtn=null;
-function setSpk(b,on){b.classList.toggle('on',on);b.textContent=on?'⏹':'🔊';b.title=t(on?'stopl':'listen');b.setAttribute('aria-label',b.title)}
+const PITCH={cl:1,gp:0.95,ge:1.05,mi:1,gr:0.92};
+const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const player=new Audio();player.preload='auto'; // un seul lecteur partagé (nécessaire sur iPhone)
+let speakingBtn=null,speakId=0,serverTts=true,silentUrl='';
+const UT=[]; // lectures gardées en mémoire : certains navigateurs les suppriment sinon
+function setSpk(b,on,busy){b.classList.toggle('on',!!on||!!busy);b.textContent=busy?'⏳':on?'⏹':'🔊';b.title=t(on||busy?'stopl':'listen');b.setAttribute('aria-label',b.title)}
+function silentWav(){
+  const n=800,buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  const w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+}
+// Sur iPhone, un son ne peut démarrer que si le lecteur a été « réveillé » pendant un clic
+function unlockAudio(){
+  try{if(!silentUrl)silentUrl=silentWav();player.src=silentUrl;const p=player.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
+}
+const GOODVOICE=/natural|neural|premium|enhanced|siri|google|online|wavenet/i;
+const BADVOICE=/compact|espeak|robot|novelty|zarvox|trinoids|bubbles|cellos|boing|bells|organ|bahh|albert|fred|junior|kathy|ralph|superstar|deranged|hysterical|jester|whisper|good news|bad news/i;
 function voiceFor(id,lg){
   const vs=speechSynthesis.getVoices().filter(v=>(v.lang||'').toLowerCase().startsWith(lg));
-  return vs.length?vs[Math.max(0,ORDER.indexOf(id))%vs.length]:null;
+  if(!vs.length)return null;
+  const sc=v=>(GOODVOICE.test(v.name)?2:0)-(BADVOICE.test(v.name)?5:0);
+  const best=Math.max(...vs.map(sc)),top=vs.filter(v=>sc(v)===best);
+  return top[Math.max(0,ORDER.indexOf(id))%top.length];
 }
 function stopSpeak(){
-  if(!TTS)return;
+  speakId++;UT.length=0;
   const b=speakingBtn;speakingBtn=null;
-  try{speechSynthesis.cancel()}catch(e){}
+  try{player.pause()}catch(e){}
+  if(TTS){try{speechSynthesis.cancel()}catch(e){}}
   if(b)setSpk(b,false);
 }
-function speak(btn,text,id,lg){
-  if(!TTS)return;
+async function speak(btn,text,id,lg){
   if(speakingBtn===btn){stopSpeak();return}
+  const wasBusy=!!speakingBtn;
   stopSpeak();
-  // phrase par phrase : certains navigateurs coupent les longues lectures
-  const parts=String(text).split(/(?<=[.!?…])\s+/).map(s=>s.trim()).filter(Boolean);
-  if(!parts.length)return;
-  const v=voiceFor(id,lg);
-  speakingBtn=btn;setSpk(btn,true);
-  parts.forEach((p,i)=>{
-    const u=new SpeechSynthesisUtterance(p);
-    u.lang=v?v.lang:(lg==='en'?'en-GB':'fr-FR');if(v)u.voice=v;
-    u.pitch=PITCH[id]||1;u.rate=1;
-    const done=()=>{if(speakingBtn===btn&&i===parts.length-1){speakingBtn=null;setSpk(btn,false)}};
-    u.onend=done;u.onerror=done;
-    speechSynthesis.speak(u);
-  });
+  const my=++speakId;
+  speakingBtn=btn;
+  if(serverTts){
+    setSpk(btn,false,true);
+    unlockAudio(); // synchrone : on est encore dans le clic
+    try{
+      const r=await fetch('/api/tts',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text,id,lang:lg})});
+      if(my!==speakId)return;
+      if(r.status===503)serverTts=false; // voix naturelle non configurée : on n'insiste plus
+      else if(!r.ok)throw new Error('HTTP '+r.status);
+      else{
+        const url=URL.createObjectURL(await r.blob());
+        if(my!==speakId){URL.revokeObjectURL(url);return}
+        player.onended=()=>{URL.revokeObjectURL(url);if(my===speakId){speakingBtn=null;setSpk(btn,false)}};
+        player.onerror=()=>{URL.revokeObjectURL(url);if(my===speakId)browserSpeak(btn,text,id,lg,true,false)};
+        player.src=url;
+        await player.play();
+        if(my===speakId)setSpk(btn,true);
+        return;
+      }
+    }catch(e){if(my!==speakId)return}
+  }
+  browserSpeak(btn,text,id,lg,true,wasBusy); // repli : voix du navigateur
+}
+function iosHint(){
+  let seen='';try{seen=localStorage.getItem('agora-ios-hint')||''}catch(e){}
+  if(seen)return;
+  try{localStorage.setItem('agora-ios-hint','1')}catch(e){}
+  toast(t('iosHint'));
+}
+function browserSpeak(btn,text,id,lg,useVoice,delay){
+  if(!TTS){speakingBtn=null;setSpk(btn,false);toast(t('spkerr'));return}
+  const my=++speakId;speakingBtn=btn;setSpk(btn,true);
+  if(IOS)iosHint();
+  const run=()=>{
+    if(my!==speakId)return;
+    // phrase par phrase : certains navigateurs coupent les longues lectures
+    const parts=(String(text).match(/[^.!?…]+[.!?…]*\s*/g)||[]).map(s=>s.trim()).filter(Boolean);
+    if(!parts.length){speakingBtn=null;setSpk(btn,false);return}
+    const v=useVoice?voiceFor(id,lg):null;
+    try{speechSynthesis.resume()}catch(e){}
+    let started=false;
+    const fail=code=>{
+      if(my!==speakId)return;
+      try{speechSynthesis.cancel()}catch(e){}
+      if(v){browserSpeak(btn,text,id,lg,false,false);return} // 2e essai, sans voix imposée
+      speakingBtn=null;UT.length=0;setSpk(btn,false);
+      toast(t('spkerr')+(code?' ('+code+')':''));
+    };
+    const timer=setTimeout(()=>{if(!started)fail('no-start')},4000);
+    parts.forEach((p,i)=>{
+      const u=new SpeechSynthesisUtterance(p);
+      u.lang=v?v.lang:(lg==='en'?'en-GB':'fr-FR');if(v)u.voice=v;
+      u.pitch=PITCH[id]||1;u.rate=1;
+      u.onstart=()=>{started=true;clearTimeout(timer)};
+      u.onend=()=>{if(my===speakId&&i===parts.length-1){clearTimeout(timer);speakingBtn=null;UT.length=0;setSpk(btn,false)}};
+      u.onerror=e=>{const c=e&&e.error;if(c==='canceled'||c==='interrupted')return;clearTimeout(timer);fail(c)};
+      UT.push(u);speechSynthesis.speak(u);
+    });
+  };
+  if(delay)setTimeout(run,150);else run();
 }
 function spk(text,id,lg){
   const b=h('button',{className:'spk',type:'button'});
-  b.style.setProperty('--c',color(id));setSpk(b,false);
-  b.onclick=()=>{}; // On désactive l'ancienne voix (gérée par voice.js)
+  b.style.setProperty('--c',id==='arb'?'#fbbf24':color(id));setSpk(b,false);
+  b.onclick=()=>speak(b,text,id,lg);
   return b;
 }
 
@@ -330,14 +416,34 @@ $('#lang').onchange=e=>{lang=e.target.value;try{localStorage.setItem('lang',lang
 $('#stack').replaceChildren(...ORDER.map((id,k)=>av(id,'--k:'+k)));
 $('#chips').onclick=e=>{if(e.target.classList.contains('chip')){$('#q').value=e.target.textContent;go()}};
 
+/* ---------- questions sensibles ---------- */
+const HELP={
+  fr:[['France','3114','3114','gratuit, 24h/24, 7j/7'],['Belgique','0800 32 123','080032123',''],['Suisse','143','143',''],['Canada','9-8-8','988',''],['Québec','1 866 APPELLE','18662773553',''],['États-Unis','988','988',''],['Royaume-Uni','Samaritans 116 123','116123','']],
+  en:[['France','3114','3114','free, 24/7'],['Belgium','0800 32 123','080032123',''],['Switzerland','143','143',''],['Canada','9-8-8','988',''],['Quebec','1 866 APPELLE','18662773553',''],['United States','988','988',''],['United Kingdom','Samaritans 116 123','116123','']]
+};
+function crisisCard(){
+  const list=h('ul',{},...HELP[lang].map(([c,n,tel,note])=>h('li',{},h('span',{textContent:c+(note?' · '+note:'')}),h('a',{href:'tel:'+tel,textContent:n}))));
+  return h('div',{className:'crisis'},h('h2',{textContent:t('crT')}),h('p',{textContent:t('crB')}),list,
+    h('p',{textContent:t('crS')}),h('p',{textContent:t('crE')}),
+    h('p',{},h('a',{className:'ext',href:'https://findahelpline.com',target:'_blank',rel:'noopener',textContent:t('crO')})));
+}
+function noticeBox(kind){
+  const b=h('div',{className:'notice'});
+  if(kind==='wellbeing')b.append(t('nbWell')+' ',h('a',{href:'https://findahelpline.com',target:'_blank',rel:'noopener',textContent:'findahelpline.com'}),'.');
+  else b.append(t('nbAdv'));
+  return b;
+}
+
 /* ---------- onglet Réponses ---------- */
 function render(){
   const pr=$('#pr');pr.replaceChildren();$('#pd').replaceChildren();
+  if(!cur&&notice==='crisis'){pr.append(crisisCard());update();return}
   if(!cur){pr.append(h('p',{className:'note',textContent:t('empty')}));update();return}
   const g=gen,me=cur;
+  if(cur.notice)pr.append(noticeBox(cur.notice));
   if(cur.summary!==false){
     const sb=h('div',{className:'sum'},h('small',{textContent:t('sum')}),h('p',{id:'sumt',textContent:cur.summary||t('think')}));
-    if(TTS&&cur.summary)sb.append(spk(cur.summary,null,me.lang));
+    if(cur.summary)sb.append(spk(cur.summary,'sum',me.lang));
     pr.append(sb);
   }
   cur.results.forEach((r,k)=>{
@@ -349,7 +455,7 @@ function render(){
     else{
       typeInto(tx,r.text,700+k*350,g);
       const vt=h('button',{className:'vt'});vt.dataset.v=r.id;
-      const acts=h('div',{className:'acts'},vt);if(TTS)acts.append(spk(r.text,r.id,me.lang));kids.push(acts);
+      const acts=h('div',{className:'acts'},vt);acts.append(spk(r.text,r.id,me.lang));kids.push(acts);
     }
     const card=h('div',{className:'rep'},av(r.id),h('div',{className:'rb'},...kids));
     card.style.setProperty('--c',color(r.id));card.style.animationDelay=(.15+k*.12)+'s';
@@ -415,7 +521,7 @@ async function openDebate(){
     me.debate=r.data.results;
     pd.replaceChildren(...me.debate.filter(x=>!x.error).map((x,k)=>{
       const tx=h('div',{className:'tx rx'});typeInto(tx,x.text,200+k*450,g);
-      const topk=[h('span',{className:'nm',textContent:x.name}),h('span',{className:'pv',textContent:t('react')})];if(TTS)topk.push(spk(x.text,x.id,me.lang));
+      const topk=[h('span',{className:'nm',textContent:x.name}),h('span',{className:'pv',textContent:t('react')})];topk.push(spk(x.text,x.id,me.lang));
       const card=h('div',{className:'rep'},av(x.id),h('div',{className:'rb'},h('div',{className:'top'},...topk),tx));
       card.style.setProperty('--c',color(x.id));return card;
     }));
@@ -434,7 +540,7 @@ async function askVerdict(me,answers,g){
     if(cur!==me)return;
     if(r.ok&&r.data.text){
       typeInto(text,r.data.text,300,g);
-      if(TTS)box.append(spk(r.data.text,null,me.lang));
+      box.append(spk(r.data.text,'arb',me.lang));
       box.append(h('span',{className:'by',textContent:t('by')+' '+r.data.by}));
     }else box.remove();
   }catch(e){if(cur===me)box.remove()}
@@ -452,7 +558,13 @@ async function go(){
     const r=await post('/api/ask',{question,lang});
     if(!r.ok){$('#msg').textContent=r.status===429?t('rate'):r.status===400?t('bad'):t('srv');return}
     gen++;stopSpeak();
-    cur={question,lang,results:r.data.results,voted:{},summary:'',debate:null,qid:rid()};
+    if(r.data.safety==='crisis'){
+      cur=null;notice='crisis';$('#msg').textContent='';showTab('r');render();
+      $('#tabs').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});
+      return;
+    }
+    notice=null;
+    cur={question,lang,results:r.data.results,voted:{},summary:'',debate:null,qid:rid(),notice:r.data.safety||null};
     const me=cur,none=me.results.every(x=>x.error==='not_configured');
     if(none){$('#msg').replaceChildren(t('allnc')+' ',h('a',{href:'/admin.html',textContent:t('adm')}));cur.summary=false}
     else $('#msg').textContent='';
@@ -464,7 +576,7 @@ async function go(){
         if(cur!==me)return;
         me.summary=s.ok&&s.data.text?s.data.text:false;
         const el=$('#sumt');
-        if(el&&me.summary){el.textContent=me.summary;if(TTS)el.closest('.sum').append(spk(me.summary,null,me.lang))}else if(el)el.closest('.sum').remove();
+        if(el&&me.summary){el.textContent=me.summary;el.closest('.sum').append(spk(me.summary,'sum',me.lang))}else if(el)el.closest('.sum').remove();
       }).catch(()=>{if(cur===me){me.summary=false;const el=$('#sumt');if(el)el.closest('.sum').remove()}});
     }else me.summary=false;
     if(me.summary===false)render();
@@ -489,14 +601,7 @@ if(SR){
       const k=e.error;
       $('#msg').textContent=(k==='not-allowed'||k==='service-not-allowed')?t('micdenied'):k==='no-speech'?t('nospeech'):k==='aborted'?'':t('micerr');
     };
-   r.onend=()=>{
-  rec=null;micState(false);
-  if(got) {
-    $('#q').focus();
-    // On lance la demande automatiquement après la dictée
-    setTimeout(() => { go(); }, 500);
-  }
-};
+    r.onend=()=>{rec=null;micState(false);if(got){$('#q').focus();setTimeout(go,500)}};
     try{r.start()}catch(err){rec=null;micState(false)}
   };
 }
@@ -505,6 +610,5 @@ $('#q').onkeydown=e=>{if(e.key==='Enter')go()};
 applyLang();
 loadVotes();
 </script>
-<script src="voice.js"></script>
 </body>
 </html>
