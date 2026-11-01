@@ -35,6 +35,7 @@ function saveStore(s) {
   fs.writeFileSync(STORE, JSON.stringify(s, null, 2), { mode: 0o600 });
 }
 
+// Priorité : clé saisie dans l'administration, sinon fichier .env
 function config(p, store = loadStore()) {
   const s = store[p.id] || {};
   const envKey = process.env[p.envKey] === 'COLLE_TA_CLE_ICI' ? '' : process.env[p.envKey] || '';
@@ -52,6 +53,7 @@ async function readJson(res) {
   return res.json();
 }
 
+// Retire le Markdown (**gras**, *italique*, # titres, `code`) si une IA en met malgré la consigne
 function stripMd(t) {
   return String(t)
     .replace(/\*\*([^*]+?)\*\*/g, '$1')
@@ -65,6 +67,7 @@ async function ask(...args) {
   return text ? stripMd(text) : text;
 }
 
+// Ligne ajoutée à tous les prompts : les IA ne connaissent pas la date du jour
 function dateLine(lang) {
   const d = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Paris' });
   return lang === 'fr'
@@ -130,6 +133,7 @@ app.post('/api/ask', async (req, res) => {
     if (!cfg.key || !cfg.model) return { ...base, error: 'not_configured' };
     const start = Date.now();
     try {
+      // Délai allongé à 60 secondes au lieu de 25
       const text = await ask(p, cfg, question, lang, AbortSignal.timeout(60_000));
       if (!text) throw new Error('empty answer');
       return { ...base, text: text.trim(), ms: Date.now() - start };
@@ -174,6 +178,7 @@ app.post('/api/debate', async (req, res) => {
     const others = answers.filter((a) => a.id !== p.id);
     if (!cfg.key || !cfg.model || !mine || others.length === 0) return { ...base, error: 'skipped' };
 
+    // Chaque IA reçoit sa propre réponse (étiquetée) et celles des AUTRES seulement
     const board = others.map((a) => `${a.name} : ${a.text}`).join('\n\n');
     const prompt = lang === 'fr'
       ? `Question du forum : « ${question} »\n\nTa réponse précédente :\n${mine.text}\n\nRéponses des autres IA :\n\n${board}\n\nRéagis à leurs réponses.`
@@ -216,9 +221,11 @@ const VERDICT_SYSTEM = {
 };
 const verdictHits = new Map();
 
+// Ordre des arbitres possibles. On peut forcer le premier avec ARBITER_PROVIDER (ex : mi).
 const ARBITER_ORDER = [...new Set([...(process.env.ARBITER_PROVIDER ? [process.env.ARBITER_PROVIDER] : []), 'cl', 'gp', 'mi', 'gr', 'ge'])]
   .map((id) => PROVIDERS.find((p) => p.id === id)).filter(Boolean);
 
+// Essaie les IA dans l'ordre : si l'une échoue (crédit, quota, panne), la suivante prend le relais
 async function askFirstAvailable(order, store, prompt, lang, system, label) {
   for (const p of order) {
     const cfg = config(p, store);
@@ -247,6 +254,7 @@ app.post('/api/verdict', async (req, res) => {
     ? `Question du forum : « ${question} »\n\nRéponses initiales des IA :\n\n${first}\n\nÉchanges du débat :\n\n${react}\n\nDonne ta conclusion : ce sur quoi elles s’accordent, le désaccord qui reste, puis un conseil utile pour toi qui as posé la question. Ne désigne un gagnant que si les arguments le justifient clairement.`
     : `Forum question: "${question}"\n\nThe AIs' initial answers:\n\n${first}\n\nDebate exchanges:\n\n${react}\n\nGive your conclusion: what they agree on, the disagreement that remains, then a useful conclusion for the person who asked. Only name a winner if the arguments clearly justify it.`;
 
+  // On essaie les arbitres dans l'ordre : si l'un échoue (crédit, quota…), le suivant prend le relais
   const store = loadStore();
   for (const p of ARBITER_ORDER) {
     const cfg = config(p, store);
@@ -294,6 +302,7 @@ app.get('/api/votes', async (req, res) => {
   catch (e) { console.error('[votes]', e.message); res.status(502).json({ error: 'unavailable' }); }
 });
 
+// Un visiteur (voter) ne peut compter qu'une fois par réponse et par question (qid) ; recliquer retire son vote
 app.post('/api/vote', async (req, res) => {
   if (!votesEnabled()) return res.status(503).json({ error: 'votes_disabled' });
   if (rateHit(voteHits, req.ip, 30)) return res.status(429).json({ error: 'rate_limit' });
@@ -304,7 +313,7 @@ app.post('/api/vote', async (req, res) => {
     const key = `agora:v:${qid}:${id}`;
     if (on) {
       if ((await redis(['SADD', key, voter])) === 1) {
-        await redis(['EXPIRE', key, 2_592_000]);
+        await redis(['EXPIRE', key, 2_592_000]); // 30 jours
         await redis(['HINCRBY', 'agora:votes', id, 1]);
       }
     } else if ((await redis(['SREM', key, voter])) === 1) {
@@ -362,45 +371,11 @@ app.post('/api/admin/test', adminAuth, async (req, res) => {
   const cfg = config(p);
   if (!cfg.key || !cfg.model) return res.json({ ok: false, error: 'not_configured' });
   try {
+    // Délai allongé à 60 secondes au lieu de 20
     const text = await ask(p, cfg, 'Dis bonjour en une phrase.', 'fr', AbortSignal.timeout(60_000));
     res.json({ ok: !!text, sample: (text || '').slice(0, 120) });
   } catch (e) {
     res.json({ ok: false, error: e.message.slice(0, 200) });
-  }
-});
-
-/* ---------- ROUTE VOIX (ElevenLabs) ---------- */
-app.post('/api/tts', async (req, res) => {
-  const text = String(req.body?.text ?? '').trim();
-  if (!text) return res.status(400).json({ error: 'no_text' });
-
-  try {
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', { 
-      method: 'POST',
-      headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': process.env.ELEVENLABS_API_KEY
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`ElevenLabs HTTP ${response.status}: ${err.slice(0, 100)}`);
-    }
-
-    const audioBuffer = await response.arrayBuffer();
-    res.set('Content-Type', 'audio/mpeg');
-    res.send(Buffer.from(audioBuffer));
-
-  } catch (e) {
-    console.error('[ElevenLabs]', e.message);
-    res.status(500).json({ error: 'tts_failed' });
   }
 });
 
