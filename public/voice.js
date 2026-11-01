@@ -1,5 +1,6 @@
 // --- GESTION DE LA VOIX ELEVENLABS ---
 document.addEventListener('click', async (e) => {
+  if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
   // On vérifie si le clic vient d'un bouton avec l'icône 🔊
   if (e.target.tagName === 'BUTTON' && e.target.textContent.includes('🔊')) {
     
