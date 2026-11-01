@@ -313,7 +313,7 @@ function speak(btn,text,id,lg){
 function spk(text,id,lg){
   const b=h('button',{className:'spk',type:'button'});
   b.style.setProperty('--c',color(id));setSpk(b,false);
-  b.onclick=()=>speak(b,text,id,lg);
+  b.onclick=()=>{}; // On désactive l'ancienne voix (gérée par voice.js)
   return b;
 }
 
