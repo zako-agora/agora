@@ -118,6 +118,46 @@ function rateHit(map, ip, max) {
 const askHits = new Map();
 const adminHits = new Map();
 
+/* ---------- Voix : seuls les textes produits par le site peuvent être lus par ElevenLabs ---------- */
+const ttsHash = (str) => crypto.createHash('sha256').update(str).digest('hex').slice(0, 32);
+const ttsAllowed = new Map(); // empreinte du texte -> date d'expiration
+function allowTts(text) {
+  if (!text) return;
+  const now = Date.now();
+  ttsAllowed.set(ttsHash(String(text).trim()), now + 6 * 3600_000);
+  if (ttsAllowed.size > 3000) {
+    for (const [k, exp] of ttsAllowed) if (exp < now) ttsAllowed.delete(k);
+    if (ttsAllowed.size > 5000) ttsAllowed.clear();
+  }
+}
+
+/* ---------- Questions sensibles ---------- */
+// 'crisis'    : détresse personnelle -> aucune IA ne répond, on affiche des numéros d'aide
+// 'wellbeing' : sujet délicat (santé mentale...) -> les IA répondent, avec un message de soutien
+// 'advice'    : santé, droit, argent -> les IA répondent, avec un rappel de prudence
+const norm = (v) => String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘`´]/g, "'");
+const CRISIS = [
+  /\b(veux|voudrais|souhaite|vais|vais\s+bientot)\s+(mourir|me\s+tuer|me\s+suicider|me\s+pendre|me\s+donner\s+la\s+mort)\b/,
+  /\benvie\s+(de|d')\s*(mourir|me\s+tuer|me\s+suicider|en\s+finir|disparaitre)\b/,
+  /\b(pensees?|idees?)\s+suicidaires?\b|\bpense\s+(au\s+suicide|a\s+me\s+(tuer|suicider))\b/,
+  /\bcomment\s+(se|me)\s+(suicider|tuer|pendre)\b|\bfacon\s+de\s+(se\s+tuer|mourir|se\s+suicider)\b/,
+  /\ben\s+finir\s+avec\s+(la\s+vie|ma\s+vie|tout|moi)\b|\bmettre\s+fin\s+a\s+(ma\s+vie|mes\s+jours)\b|\bveux\s+en\s+finir\s*[.!?]*$/,
+  /\b(ne\s+)?veux\s+plus\s+vivre\b|\bplus\s+envie\s+de\s+vivre\b|\bveux\s+disparaitre\b/,
+  /\bme\s+(faire\s+du\s+mal|scarifier|mutiler)\b|\bautomutilation\b/,
+  /\b(want|wanna|going|plan(ning)?)\s+to\s+(die|kill\s+myself|end\s+(my\s+life|it\s+all)|commit\s+suicide)\b/,
+  /\bkill\s+myself\b|\bend\s+my\s+life\b|\btake\s+my\s+own\s+life\b|\bsuicidal\b|\bcommit\s+suicide\b|\bhurt\s+myself\b|\bself[-\s]?harm\b|\bcut\s+myself\b/,
+  /\b(don'?t|do\s+not)\s+want\s+to\s+(live|be\s+alive|exist)\b|\bno\s+reason\s+to\s+live\b|\bwish\s+i\s+(was|were)\s+dead\b|\bhow\s+to\s+(die|kill\s+myself)\b/,
+];
+const WELLBEING = /suicid|depress|deprim|anxiet|angoiss|mal[-\s]?etre|burn[-\s]?out|solitude|isolement|harcel|violence|\babus|addiction|deuil|raison\s+de\s+vivre|sens\s+de\s+la\s+vie|a\s+quoi\s+bon|trauma|panique|desespoir|reason\s+to\s+live|meaning\s+of\s+life|point\s+of\s+(life|living)|lonel|bull(y|ied)|abuse|addict|grief|hopeless|panic/;
+const ADVICE = /medicament|posologie|\bdoses?\b|symptom|diagnos|maladie|douleur|traitement|cancer|grossesse|enceinte|ordonnance|antibiotique|vaccin|tension\s+arterielle|diabet|medication|dosage|treatment|pregnan|prescription|antibiotic|blood\s+pressure|avocat|tribunal|divorce|licenci|contrat|heritage|testament|amende|plainte|garde\s+des\s+enfants|loyer|expulsion|lawyer|lawsuit|contract|custody|inherit|evict|immigration|investir|placement|bourse|crypto|bitcoin|pret\s+immobilier|assurance[-\s]vie|retraite|impots?|invest|\bstocks?\b|\bloan\b|mortgage|retirement|\btaxes?\b/;
+function classify(question) {
+  const q = norm(question);
+  if (CRISIS.some((re) => re.test(q))) return 'crisis';
+  if (WELLBEING.test(q)) return 'wellbeing';
+  if (ADVICE.test(q)) return 'advice';
+  return null;
+}
+
 /* ---------- Route publique : poser une question ---------- */
 app.post('/api/ask', async (req, res) => {
   if (rateHit(askHits, req.ip, 10)) return res.status(429).json({ error: 'rate_limit' });
@@ -125,6 +165,10 @@ app.post('/api/ask', async (req, res) => {
   const question = String(req.body?.question ?? '').trim();
   const lang = SYSTEM[req.body?.lang] ? req.body.lang : 'fr';
   if (question.length < 3 || question.length > 500) return res.status(400).json({ error: 'bad_question' });
+
+  // Détresse personnelle : on n'interroge aucune IA, la page affiche des numéros d'aide
+  const safety = classify(question);
+  if (safety === 'crisis') return res.json({ question, lang, results: [], safety });
 
   const store = loadStore();
   const results = await Promise.all(PROVIDERS.map(async (p) => {
@@ -136,6 +180,7 @@ app.post('/api/ask', async (req, res) => {
       // Délai allongé à 60 secondes au lieu de 25
       const text = await ask(p, cfg, question, lang, AbortSignal.timeout(60_000));
       if (!text) throw new Error('empty answer');
+      allowTts(text);
       return { ...base, text: text.trim(), ms: Date.now() - start };
     } catch (e) {
       console.error(`[${p.name}]`, e.message);
@@ -143,7 +188,7 @@ app.post('/api/ask', async (req, res) => {
     }
   }));
 
-  res.json({ question, lang, results });
+  res.json({ question, lang, results, safety });
 });
 
 /* ---------- Débat entre IA et synthèse ---------- */
@@ -187,6 +232,7 @@ app.post('/api/debate', async (req, res) => {
     try {
       const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), DEBATE_SYSTEM[lang](p.name));
       if (!text) throw new Error('empty answer');
+      allowTts(text);
       return { ...base, text: text.trim() };
     } catch (e) {
       console.error(`[${p.name} débat]`, e.message);
@@ -210,6 +256,7 @@ app.post('/api/summary', async (req, res) => {
 
   const out = await askFirstAvailable(ARBITER_ORDER, loadStore(), prompt, lang, SUMMARY_SYSTEM[lang], 'synthèse');
   if (!out) return res.status(502).json({ error: 'unavailable' });
+  allowTts(out.text);
   res.json({ text: out.text });
 });
 
@@ -261,7 +308,7 @@ app.post('/api/verdict', async (req, res) => {
     if (!cfg.key || !cfg.model) continue;
     try {
       const text = await ask(p, cfg, prompt, lang, AbortSignal.timeout(60_000), VERDICT_SYSTEM[lang]([...new Set(answers.map((a) => a.name))]));
-      if (text) return res.json({ text: text.trim(), by: p.name });
+      if (text) { allowTts(text); return res.json({ text: text.trim(), by: p.name }); }
     } catch (e) {
       console.error(`[arbitre ${p.name}]`, e.message);
     }
@@ -326,6 +373,67 @@ app.post('/api/vote', async (req, res) => {
   }
 });
 
+/* ---------- Voix naturelle (ElevenLabs) ---------- */
+// Variables Render : ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID (voix par défaut),
+// et au choix une voix par IA : ELEVENLABS_VOICE_CL, _GP, _GE, _MI, _GR, ainsi que _ARB (arbitre) et _SUM (synthèse).
+// Facultatif : ELEVENLABS_MODEL (défaut eleven_flash_v2_5), TTS_DAILY_CHARS (plafond de caractères par jour, défaut 20000).
+const elKey = () => (process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_API_KEY || '').trim();
+const elModel = () => (process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5').trim();
+const ttsDailyMax = () => Number(process.env.TTS_DAILY_CHARS) || 20000;
+const ttsHits = new Map();
+const ttsCache = new Map(); // clé -> audio mp3 (les plus anciens sont retirés)
+let ttsDay = '';
+let ttsChars = 0;
+
+function voiceIdFor(id) {
+  const k = String(id || '').toUpperCase();
+  const own = /^[A-Z]{2,3}$/.test(k) ? process.env['ELEVENLABS_VOICE_' + k] : '';
+  const sum = k === 'SUM' ? process.env.ELEVENLABS_VOICE_ARB : ''; // la synthèse reprend la voix de l'arbitre si elle n'a pas la sienne
+  return String(own || sum || process.env.ELEVENLABS_VOICE_ID || '').trim();
+}
+
+app.post('/api/tts', async (req, res) => {
+  if (!elKey()) return res.status(503).json({ error: 'tts_disabled' });
+  if (rateHit(ttsHits, req.ip, 15)) return res.status(429).json({ error: 'rate_limit' });
+  const text = String(req.body?.text ?? '').trim();
+  if (text.length < 2 || text.length > 1500) return res.status(400).json({ error: 'bad_text' });
+  // On ne lit que ce que le site a lui-même généré : sinon n'importe qui pourrait vider ton quota
+  if (!ttsAllowed.has(ttsHash(text))) return res.status(403).json({ error: 'not_allowed' });
+  const voice = voiceIdFor(req.body?.id);
+  if (!/^[\w-]{10,40}$/.test(voice)) return res.status(503).json({ error: 'no_voice' });
+
+  const model = elModel();
+  const key = ttsHash(`${voice}|${model}|${text}`);
+  let audio = ttsCache.get(key);
+  if (!audio) {
+    const day = new Date().toISOString().slice(0, 10);
+    if (day !== ttsDay) { ttsDay = day; ttsChars = 0; }
+    if (ttsChars + text.length > ttsDailyMax()) return res.status(429).json({ error: 'daily_limit' });
+    try {
+      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(30_000),
+        headers: { 'xi-api-key': elKey(), 'content-type': 'application/json', accept: 'audio/mpeg' },
+        body: JSON.stringify({ text, model_id: model }),
+      });
+      if (!r.ok) {
+        const body = await r.text().catch(() => '');
+        throw new Error(`HTTP ${r.status} ${body.slice(0, 200)}`);
+      }
+      audio = Buffer.from(await r.arrayBuffer());
+    } catch (e) {
+      console.error('[voix]', e.message);
+      return res.status(502).json({ error: 'tts_failed' });
+    }
+    ttsChars += text.length;
+    ttsCache.set(key, audio);
+    if (ttsCache.size > 40) ttsCache.delete(ttsCache.keys().next().value);
+  }
+  res.setHeader('content-type', 'audio/mpeg');
+  res.setHeader('cache-control', 'private, max-age=3600');
+  res.end(audio);
+});
+
 /* ---------- Administration (protégée par ADMIN_PASSWORD) ---------- */
 function adminAuth(req, res, next) {
   const pw = process.env.ADMIN_PASSWORD;
@@ -378,40 +486,6 @@ app.post('/api/admin/test', adminAuth, async (req, res) => {
     res.json({ ok: false, error: e.message.slice(0, 200) });
   }
 });
-/* ---------- Route Voix (ElevenLabs) ---------- */
-app.post('/api/tts', async (req, res) => {
-  const text = String(req.body?.text ?? '').trim();
-  if (!text) return res.status(400).json({ error: 'no_text' });
 
-  try {
-    // On utilise votre ID de voix française ici
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/usy5mXLbV9SeGWACyT3Y', { 
-      method: 'POST',
-      headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': process.env.ELEVENLABS_API_KEY
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: { stability: 0.35, similarity_boost: 0.75 }
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`ElevenLabs HTTP ${response.status}: ${err.slice(0, 100)}`);
-    }
-
-    const audioBuffer = await response.arrayBuffer();
-    res.set('Content-Type', 'audio/mpeg');
-    res.send(Buffer.from(audioBuffer));
-
-  } catch (e) {
-    console.error('[ElevenLabs]', e.message);
-    res.status(500).json({ error: 'tts_failed' });
-  }
-});
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Agora tourne sur http://localhost:${port}  (administration : /admin.html)`));
