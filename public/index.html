@@ -349,7 +349,25 @@ function render(){
     else{
       typeInto(tx,r.text,700+k*350,g);
       const vt=h('button',{className:'vt'});vt.dataset.v=r.id;
-      const acts=h('div',{className:'acts'},vt);if(TTS)acts.append(spk(r.text,r.id,me.lang));kids.push(acts);
+            const acts=h('div',{className:'acts'},vt);
+      const btnSpeak = h('button', { className: 'vt', textContent: '🔊' });
+      btnSpeak.onclick = async () => {
+        try {
+          const audioRes = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: r.text })
+          });
+          if (!audioRes.ok) throw new Error('Erreur audio');
+          const blob = await audioRes.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.play();
+          audio.onended = () => URL.revokeObjectURL(url);
+        } catch(e) { console.error(e); }
+      };
+      acts.append(btnSpeak);
+      kids.push(acts);
     }
     const card=h('div',{className:'rep'},av(r.id),h('div',{className:'rb'},...kids));
     card.style.setProperty('--c',color(r.id));card.style.animationDelay=(.15+k*.12)+'s';
